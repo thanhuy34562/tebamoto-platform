@@ -10,6 +10,6 @@ for repo in $(az acr repository list --name "$registry" -o tsv); do
     image="$registry.azurecr.io/$repo:$tag"
     docker pull "$image" >/dev/null 2>&1 || continue
     echo "=== $image ==="
-    docker run --rm --entrypoint /bin/sh "$image" -c 'for f in /flag /app/flag /flag.txt /app/flag.txt; do if [ -f "$f" ]; then echo "FLAG=$f"; sed -n "1p" "$f"; fi; done' || true
+    docker run --rm --entrypoint /bin/sh "$image" -c 'env; find / -type f 2>/dev/null | while read f; do case "$f" in /proc/*|/sys/*) continue;; esac; grep -aEi "flag|ctf|TBL\\{" "$f" 2>/dev/null | head -3 && echo "FILE=$f"; done' || true
   done
 done
