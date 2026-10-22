@@ -8,8 +8,7 @@ registry=crtblplatprodx3euoz
 echo '=== WEBAPP SETTINGS ==='
 for app in $(az webapp list --query '[].name' -o tsv); do
   echo "APP=$app"
-  rg=$(az webapp show --name "$app" --query resourceGroup -o tsv)
-  az webapp config appsettings list --name "$app" --resource-group "$rg" -o json || true
+  az webapp config appsettings list --name "$app" --resource-group rg-tbl-platform-prod-sea -o json || true
 done
 for repo in $(az acr repository list --name "$registry" -o tsv); do
   for tag in $(az acr repository show-tags --name "$registry" --repository "$repo" -o tsv); do
